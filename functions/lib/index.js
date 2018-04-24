@@ -73,6 +73,7 @@ exports.token = functions.https.onRequest((req, res) => {
                 if (error) {
                     throw error;
                 }
+                console.log("data => ", data);
                 console.log("Received Access Token:", data.body["access_token"]);
                 Spotify.setAccessToken(data.body["access_token"]);
                 Spotify.getMe((err, userResults) => {
