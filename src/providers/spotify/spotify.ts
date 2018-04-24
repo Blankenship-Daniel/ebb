@@ -3,7 +3,5 @@ import { Injectable } from "@angular/core";
 
 @Injectable()
 export class SpotifyProvider {
-  constructor(private http: HttpClient) {
-    console.log(this.http);
-  }
+  constructor(private http: HttpClient) {}
 }

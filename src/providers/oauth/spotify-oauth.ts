@@ -25,12 +25,7 @@ export class SpotifyOauthProvider {
 
       this.jsonp.get(apiUrl).subscribe((response: any) => {
         const user = response._body;
-
-        console.log("user", user);
-
-        this.afAuth.auth
-          .signInWithCustomToken(user.firebaseToken)
-          .then(credential => console.log(credential));
+        this.afAuth.auth.signInWithCustomToken(user.firebaseToken);
       });
     }
   }

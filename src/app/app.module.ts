@@ -6,6 +6,7 @@ import { MyApp } from "./app.component";
 
 import { AngularFireModule } from "angularfire2";
 import { AngularFireAuth } from "angularfire2/auth";
+import { AngularFireDatabase } from "angularfire2/database";
 import { firebaseConfig } from "../environment/firebase.config";
 
 import { AboutPage } from "../pages/about/about";
@@ -17,7 +18,7 @@ import { StatusBar } from "@ionic-native/status-bar";
 import { SplashScreen } from "@ionic-native/splash-screen";
 
 import { SpotifyOauthProvider } from "../providers/oauth/spotify-oauth";
-import { SpotifyProvider } from '../providers/spotify/spotify';
+import { SpotifyProvider } from "../providers/spotify/spotify";
 
 @NgModule({
   declarations: [MyApp, AboutPage, ContactPage, HomePage, TabsPage],
@@ -31,6 +32,7 @@ import { SpotifyProvider } from '../providers/spotify/spotify';
   entryComponents: [MyApp, AboutPage, ContactPage, HomePage, TabsPage],
   providers: [
     AngularFireAuth,
+    AngularFireDatabase,
     StatusBar,
     SplashScreen,
     { provide: ErrorHandler, useClass: IonicErrorHandler },
