@@ -89,7 +89,7 @@ export const token = functions.https.onRequest((req, res) => {
           }
           console.log("Auth code exchange result received:", userResults);
           // We have a Spotify access token and the user identity now.
-          const accessToken = data.body["access_token"];
+          const spotifyAccessToken = data.body["access_token"];
           const spotifyUserID = userResults.body["id"];
           const profilePic = userResults.body["images"][0]["url"];
           const userName = userResults.body["display_name"];
@@ -101,10 +101,16 @@ export const token = functions.https.onRequest((req, res) => {
             userName,
             profilePic,
             email,
-            accessToken
+            spotifyAccessToken
           ).then(firebaseToken => {
-            // Serve an HTML page that signs the user in and updates the user profile.
-            return res.jsonp({ token: firebaseToken });
+            return res.jsonp({
+              spotifyUserId: spotifyUserID,
+              userName: userName,
+              profilePic: profilePic,
+              email: email,
+              spotifyAccessToken: spotifyAccessToken,
+              firebaseToken: firebaseToken
+            });
           });
         });
       });
