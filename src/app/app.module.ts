@@ -1,6 +1,7 @@
 import { NgModule, ErrorHandler } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
 import { JsonpModule } from "@angular/http";
+import { HttpClientModule } from "@angular/common/http";
 import { IonicApp, IonicModule, IonicErrorHandler } from "ionic-angular";
 import { MyApp } from "./app.component";
 
@@ -19,6 +20,7 @@ import { SplashScreen } from "@ionic-native/splash-screen";
 
 import { SpotifyOauthProvider } from "../providers/oauth/spotify-oauth";
 import { SpotifyProvider } from "../providers/spotify/spotify";
+import { AuthProvider } from '../providers/auth/auth';
 
 @NgModule({
   declarations: [MyApp, AboutPage, ContactPage, HomePage, TabsPage],
@@ -26,6 +28,7 @@ import { SpotifyProvider } from "../providers/spotify/spotify";
     BrowserModule,
     IonicModule.forRoot(MyApp),
     AngularFireModule.initializeApp(firebaseConfig),
+    HttpClientModule,
     JsonpModule
   ],
   bootstrap: [IonicApp],
@@ -37,7 +40,8 @@ import { SpotifyProvider } from "../providers/spotify/spotify";
     SplashScreen,
     { provide: ErrorHandler, useClass: IonicErrorHandler },
     SpotifyOauthProvider,
-    SpotifyProvider
+    SpotifyProvider,
+    AuthProvider
   ]
 })
 export class AppModule {}
