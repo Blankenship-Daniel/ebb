@@ -20,7 +20,7 @@ import { SplashScreen } from "@ionic-native/splash-screen";
 
 import { SpotifyOauthProvider } from "../providers/oauth/spotify-oauth";
 import { SpotifyProvider } from "../providers/spotify/spotify";
-import { AuthProvider } from '../providers/auth/auth';
+import { AuthProvider } from "../providers/auth/auth";
 
 @NgModule({
   declarations: [MyApp, AboutPage, ContactPage, HomePage, TabsPage],

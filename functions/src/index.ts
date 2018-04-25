@@ -3,6 +3,7 @@ import * as cookieParser from "cookie-parser";
 import * as crypto from "crypto";
 import * as admin from "firebase-admin";
 import * as SpotifyWebApi from "spotify-web-api-node";
+import { user } from "firebase-functions/lib/providers/auth";
 
 // Firebase Setup
 const serviceAccount = require("../service-account.json");
@@ -69,10 +70,12 @@ export const token = functions.https.onRequest((req, res) => {
       console.log("Received verification state:", req.cookies.state);
       console.log("Received state:", req.query.state);
       if (!req.cookies.state) {
+        console.log("!req.cookies.state");
         throw new Error(
           "State cookie not set or expired. Maybe you took too long to authorize. Please try again."
         );
       } else if (req.cookies.state !== req.query.state) {
+        console.log("req.cookies.state !== req.query.state");
         throw new Error("State validation failed");
       }
       console.log("Received auth code:", req.query.code);
@@ -107,12 +110,12 @@ export const token = functions.https.onRequest((req, res) => {
             spotifyRefreshToken
           ).then(firebaseToken => {
             return res.jsonp({
-              spotifyUserId: spotifyUserID,
-              spotifyAccessToken: spotifyAccessToken,
-              spotifyRefreshToken: spotifyRefreshToken,
               userName: userName,
               profilePic: profilePic,
               email: email,
+              spotifyUserId: spotifyUserID,
+              spotifyAccessToken: spotifyAccessToken,
+              spotifyRefreshToken: spotifyRefreshToken,
               firebaseToken: firebaseToken
             });
           });

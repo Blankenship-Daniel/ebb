@@ -63,9 +63,11 @@ exports.token = functions.https.onRequest((req, res) => {
             console.log("Received verification state:", req.cookies.state);
             console.log("Received state:", req.query.state);
             if (!req.cookies.state) {
+                console.log("!req.cookies.state");
                 throw new Error("State cookie not set or expired. Maybe you took too long to authorize. Please try again.");
             }
             else if (req.cookies.state !== req.query.state) {
+                console.log("req.cookies.state !== req.query.state");
                 throw new Error("State validation failed");
             }
             console.log("Received auth code:", req.query.code);
@@ -73,7 +75,7 @@ exports.token = functions.https.onRequest((req, res) => {
                 if (error) {
                     throw error;
                 }
-                console.log("data => ", data);
+                console.log("Received Refresh Token:", data.body["access_token"]);
                 console.log("Received Access Token:", data.body["access_token"]);
                 Spotify.setAccessToken(data.body["access_token"]);
                 Spotify.getMe((err, userResults) => {
@@ -83,18 +85,20 @@ exports.token = functions.https.onRequest((req, res) => {
                     console.log("Auth code exchange result received:", userResults);
                     // We have a Spotify access token and the user identity now.
                     const spotifyAccessToken = data.body["access_token"];
+                    const spotifyRefreshToken = data.body["refresh_token"];
                     const spotifyUserID = userResults.body["id"];
                     const profilePic = userResults.body["images"][0]["url"];
                     const userName = userResults.body["display_name"];
                     const email = userResults.body["email"];
                     // Create a Firebase account and get the Custom Auth Token.
-                    return createFirebaseAccount(spotifyUserID, userName, profilePic, email, spotifyAccessToken).then(firebaseToken => {
+                    return createFirebaseAccount(spotifyUserID, userName, profilePic, email, spotifyAccessToken, spotifyRefreshToken).then(firebaseToken => {
                         return res.jsonp({
-                            spotifyUserId: spotifyUserID,
                             userName: userName,
                             profilePic: profilePic,
                             email: email,
+                            spotifyUserId: spotifyUserID,
                             spotifyAccessToken: spotifyAccessToken,
+                            spotifyRefreshToken: spotifyRefreshToken,
                             firebaseToken: firebaseToken
                         });
                     });
@@ -114,14 +118,19 @@ exports.token = functions.https.onRequest((req, res) => {
  *
  * @returns {Promise<string>} The Firebase custom auth token in a promise.
  */
-function createFirebaseAccount(spotifyID, displayName, photoURL, email, accessToken) {
+function createFirebaseAccount(spotifyID, displayName, photoURL, email, accessToken, refreshToken) {
     // The UID we'll assign to the user.
     const uid = `spotify:${spotifyID}`;
     // Save the access token to the Firebase Realtime Database.
-    const databaseTask = admin
+    const accessTokenTask = admin
         .database()
         .ref(`/spotifyAccessToken/${uid}`)
         .set(accessToken);
+    // Save the refresh token to the Firebase Realtime Database.
+    const refreshTokenTask = admin
+        .database()
+        .ref(`/spotifyRefreshToken/${uid}`)
+        .set(refreshToken);
     // Create or update the user account.
     const userCreationTask = admin
         .auth()
@@ -145,7 +154,7 @@ function createFirebaseAccount(spotifyID, displayName, photoURL, email, accessTo
         throw error;
     });
     // Wait for all async tasks to complete, then generate and return a custom auth token.
-    return Promise.all([userCreationTask, databaseTask])
+    return Promise.all([userCreationTask, accessTokenTask, refreshTokenTask])
         .then(() => {
         // Create a Firebase custom auth token.
         return admin.auth().createCustomToken(uid);

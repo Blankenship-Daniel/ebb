@@ -10,6 +10,9 @@ import { SpotifyOauthProvider } from "../providers/oauth/spotify-oauth";
 import { AngularFireAuth } from "angularfire2/auth";
 import { AngularFireDatabase } from "angularfire2/database";
 
+import { Observable } from "rxjs/Rx";
+import { merge, map } from "rxjs/operators";
+
 @Component({
   templateUrl: "app.html"
 })
@@ -21,8 +24,8 @@ export class MyApp {
     statusBar: StatusBar,
     splashScreen: SplashScreen,
     public loadingCtrl: LoadingController,
-    private db: AngularFireDatabase,
     private afAuth: AngularFireAuth,
+    private db: AngularFireDatabase,
     private spotify: SpotifyProvider,
     private spotifyOauth: SpotifyOauthProvider
   ) {
@@ -41,19 +44,32 @@ export class MyApp {
     loading.present();
     this.afAuth.authState.subscribe(user => {
       if (!user) {
-        this.spotifyOauth.auth();
+        this.spotifyOauth
+          .auth()
+          .subscribe(user => console.log("oauth user", user));
       } else {
-        const itemRef = this.db.object(`spotifyAccessToken/${user.uid}`);
-        itemRef.snapshotChanges().subscribe(action => {
-          const spotifyAccessToken = action.payload.val();
-          this.spotify
-            .getPlaylists(spotifyAccessToken)
-            .subscribe(
-              res => console.log(res),
-              err => console.error(err),
-              () => loading.dismiss()
-            );
-        });
+        Observable.combineLatest(
+          this.db
+            .object(`spotifyAccessToken/${user.uid}`)
+            .snapshotChanges()
+            .pipe(map(action => action.payload.val())),
+          this.db
+            .object(`spotifyRefreshToken/${user.uid}`)
+            .snapshotChanges()
+            .pipe(map(action => action.payload.val()))
+        )
+          .pipe(
+            map(([accessToken, refreshToken]) => {
+              return {
+                accessToken,
+                refreshToken
+              };
+            })
+          )
+          .subscribe(data => {
+            loading.dismiss();
+            console.log("tokens", data);
+          });
       }
     });
   }

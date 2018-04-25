@@ -1,14 +1,16 @@
-import { Jsonp } from "@angular/http";
+import { Jsonp, Response } from "@angular/http";
 import { Injectable } from "@angular/core";
+import { Observable } from "rxjs/Observable";
+import { concatMap, map } from "rxjs/operators";
 import { AngularFireAuth } from "angularfire2/auth";
 
 @Injectable()
 export class SpotifyOauthProvider {
   private endpoint: string = `https://us-central1-ebb-music.cloudfunctions.net`;
 
-  constructor(private jsonp: Jsonp, private afAuth: AngularFireAuth) {}
+  constructor(private afAuth: AngularFireAuth, private jsonp: Jsonp) {}
 
-  auth() {
+  auth(): Observable<any> {
     const code: string = this.getUrlParameter("code");
     const state: string = this.getUrlParameter("state");
     const error: string = this.getUrlParameter("error");
@@ -23,11 +25,17 @@ export class SpotifyOauthProvider {
         this.endpoint
       }/token?code=${code}&state=${state}&callback=JSONP_CALLBACK`;
 
-      this.jsonp.get(apiUrl).subscribe((response: any) => {
-        const user = response._body;
-        this.afAuth.auth.signInWithCustomToken(user.firebaseToken);
-      });
+      return this.jsonp
+        .get(apiUrl)
+        .pipe(
+          map((res: any) => res._body),
+          concatMap(user =>
+            this.afAuth.auth.signInWithCustomToken(user.firebaseToken)
+          )
+        );
     }
+
+    return Observable.of(null);
   }
 
   /**
