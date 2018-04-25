@@ -5,7 +5,6 @@ import { SplashScreen } from "@ionic-native/splash-screen";
 
 import { TabsPage } from "../pages/tabs/tabs";
 
-import { SpotifyProvider } from "../providers/spotify/spotify";
 import { SpotifyOauthProvider } from "../providers/oauth/spotify-oauth";
 import { AngularFireAuth } from "angularfire2/auth";
 import { AngularFireDatabase } from "angularfire2/database";
@@ -26,7 +25,6 @@ export class MyApp {
     public loadingCtrl: LoadingController,
     private afAuth: AngularFireAuth,
     private db: AngularFireDatabase,
-    private spotify: SpotifyProvider,
     private spotifyOauth: SpotifyOauthProvider
   ) {
     platform.ready().then(() => {
@@ -44,33 +42,32 @@ export class MyApp {
     loading.present();
     this.afAuth.authState.subscribe(user => {
       if (!user) {
-        this.spotifyOauth
-          .auth()
-          .subscribe(user => console.log("oauth user", user));
+        this.spotifyOauth.auth().subscribe(user => console.log(user));
       } else {
-        Observable.combineLatest(
-          this.db
-            .object(`spotifyAccessToken/${user.uid}`)
-            .snapshotChanges()
-            .pipe(map(action => action.payload.val())),
-          this.db
-            .object(`spotifyRefreshToken/${user.uid}`)
-            .snapshotChanges()
-            .pipe(map(action => action.payload.val()))
-        )
-          .pipe(
-            map(([accessToken, refreshToken]) => {
-              return {
-                accessToken,
-                refreshToken
-              };
-            })
-          )
-          .subscribe(data => {
-            loading.dismiss();
-            console.log("tokens", data);
-          });
+        this.getAccessTokens(user.uid).subscribe(tokens => {
+          loading.dismiss();
+        });
       }
     });
+  }
+
+  getAccessTokens(uid: string): Observable<any> {
+    return Observable.combineLatest(
+      this.db
+        .object(`spotifyAccessToken/${uid}`)
+        .snapshotChanges()
+        .pipe(map(action => action.payload.val())),
+      this.db
+        .object(`spotifyRefreshToken/${uid}`)
+        .snapshotChanges()
+        .pipe(map(action => action.payload.val()))
+    ).pipe(
+      map(([accessToken, refreshToken]) => {
+        return {
+          accessToken,
+          refreshToken
+        };
+      })
+    );
   }
 }
